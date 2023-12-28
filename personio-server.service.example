@@ -1,0 +1,10 @@
+[Unit]
+Description=personio-server
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/personio-server
+Restart=always
+
+[Install]
+WantedBy=graphical-session.target

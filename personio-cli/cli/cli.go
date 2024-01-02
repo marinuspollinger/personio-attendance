@@ -68,11 +68,6 @@ func CustomBreakTimes(cfg config.EnvConfig, start string, stop string) (int, err
 		return 1, err
 	}
 
-	// check if start-time is before end-time
-	if !startParsed.Before(endParsed) {
-		return 1, fmt.Errorf("Start Time not before End Time")
-	}
-
 	body := setBreakCustomTimeRequest{
 		StartTime: startParsed,
 		EndTime:   endParsed,

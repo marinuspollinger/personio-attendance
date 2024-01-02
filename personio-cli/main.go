@@ -15,87 +15,93 @@ func main() {
 	cfg := config.EnvConfig{}
 	ulog.FatalIfError(env.Set(&cfg))
 
-	status := flag.Bool("status", false, "Get Current Times")
 	sendToPersonio := flag.Bool("send", false, "Send Current Times to Personio API")
 	yFlag := flag.Bool("yes", false, "Immediatly write to personio, without checking times first")
 
-	startBreak := flag.Bool("start-break", false, "Start the Break now!")
-	endBreak := flag.Bool("end-break", false, "End the Break now!")
+	startBreakNow := flag.Bool("start-break", false, "Start the Break now!")
+	endBreakNow := flag.Bool("end-break", false, "End the Break now!")
 
+	customStartTime := flag.String("start-time", "", "Set Start Time")
+	customStopTime := flag.String("stop-time", "", "Set Stop Time")
 	customBreakStart := flag.String("break-start-time", "", "Set Break Start Time")
-	customBreakStop := flag.String("break-end-time", "", "Set Break End Time")
+	customBreakStop := flag.String("break-stop-time", "", "Set Break Stop Time")
 
 	flag.Parse()
 
-	// both flags MUST be set at the same time if they are used
-	if *customBreakStart != "" || *customBreakStop != "" {
-		if (*customBreakStart == "") != (*customBreakStop == "") {
-			fmt.Println("Both start-time and end-time must be set together")
-			os.Exit(1)
-		}
-	}
-
 	// check if more then one flag are set, only check one customBreak flag because of previous check above
-	flagsSet := 0
-	if *status {
-		flagsSet++
+	uniqueFlagsSet := 0
+	if *startBreakNow {
+		uniqueFlagsSet++
 	}
-	if *startBreak {
-		flagsSet++
-	}
-	if *endBreak {
-		flagsSet++
+	if *endBreakNow {
+		uniqueFlagsSet++
 	}
 	if *sendToPersonio {
-		flagsSet++
-	}
-	if *customBreakStart != "" {
-		flagsSet++
+		uniqueFlagsSet++
 	}
 
 	// if more then one flag are set, fail
-	if flagsSet > 1 {
+	if uniqueFlagsSet > 1 {
 		fmt.Println("Only one flag can be set at a time")
 		os.Exit(1)
 	}
 
-	// print help message if no flag is set
-	if flagsSet == 0 {
-		flag.PrintDefaults()
-	}
-
-	if *status {
-		exitCode, err := cli.GetStatus(cfg)
-		if err != nil {
-			fmt.Printf("Error getting status: %s", err)
-		}
-		os.Exit(exitCode)
-	}
-
-	if *startBreak {
+	if *startBreakNow {
 		exitCode, err := cli.StartBreak(cfg)
 		if err != nil {
 			fmt.Printf("Error starting Break: %s", err)
 		}
-		os.Exit(exitCode)
+		exit(cfg, exitCode)
 
 	}
 
-	if *endBreak {
+	if *endBreakNow {
 		exitCode, err := cli.EndBreak(cfg)
 		if err != nil {
 			fmt.Printf("Error ending Break: %s", err)
 		}
-		os.Exit(exitCode)
+		exit(cfg, exitCode)
 
 	}
 
-	if *customBreakStart != "" {
-		exitCode, err := cli.CustomBreakTimes(cfg, *customBreakStart, *customBreakStop)
+	if *customStartTime != "" {
+		exitCode, err := cli.CustomStartTime(cfg, *customStartTime)
 		if err != nil {
-			fmt.Printf("Error setting Custom Break Times: %s", err)
+			fmt.Printf("Error setting Custom Start Time: %s", err)
 		}
-		os.Exit(exitCode)
+		if exitCode != 0 {
+			exit(cfg, exitCode)
+		}
+	}
+
+	if *customBreakStart != "" {
+		exitCode, err := cli.CustomBreakStartTime(cfg, *customBreakStart)
+		if err != nil {
+			fmt.Printf("Error setting Custom Break Start Time: %s", err)
+		}
+		if exitCode != 0 {
+			exit(cfg, exitCode)
+		}
+	}
+
+	if *customBreakStop != "" {
+		exitCode, err := cli.CustomBreakStopTime(cfg, *customBreakStop)
+		if err != nil {
+			fmt.Printf("Error setting Custom Break Stop Time: %s", err)
+		}
+		if exitCode != 0 {
+			exit(cfg, exitCode)
+		}
+	}
+
+	if *customStopTime != "" {
+		exitCode, err := cli.CustomStopTime(cfg, *customStopTime)
+		if err != nil {
+			fmt.Printf("Error setting Custom Stop Time: %s", err)
+		}
+		if exitCode != 0 {
+			exit(cfg, exitCode)
+		}
 	}
 
 	if *sendToPersonio {
@@ -103,7 +109,20 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error sending times to Personio: %s", err)
 		}
-		os.Exit(exitCode)
+		if exitCode != 0 {
+			exit(cfg, exitCode)
+		}
 	}
 
+	exit(cfg, 0)
+}
+
+func exit(cfg config.EnvConfig, exitCode int) {
+	_, err := cli.GetStatus(cfg)
+	if err != nil {
+		fmt.Printf("Error getting status: %s", err)
+		os.Exit(127)
+	}
+
+	os.Exit(exitCode)
 }

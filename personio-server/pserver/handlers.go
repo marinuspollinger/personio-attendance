@@ -9,16 +9,16 @@ import (
 	ulog "github.com/dunv/ulog/v2"
 )
 
-type setBreakCustomTimeRequest struct {
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
+type setCustomTimeRequest struct {
+	CustomBreakStartTime time.Time `json:"break_start_time"`
+	CustomBreakStopTime  time.Time `json:"break_end_time"`
+	CustomStartTime      time.Time `json:"start_time"`
+	CustomStopTime       time.Time `json:"end_time"`
 }
 
 var GetStatusHandler = func(s *ServerData) uhttp.Handler {
 	return uhttp.NewHandler(
 		uhttp.WithGet(func(r *http.Request, returnCode *int) interface{} {
-			s.Success = true
-			s.Error = ""
 			return s
 		}),
 	)
@@ -58,14 +58,50 @@ var EndBreakNowHandler = func(s *ServerData) uhttp.Handler {
 	)
 }
 
-var SetBreakCustomTimeHandler = func(s *ServerData) uhttp.Handler {
+var SetCustomStartTime = func(s *ServerData) uhttp.Handler {
 	return uhttp.NewHandler(
-		uhttp.WithPostModel(setBreakCustomTimeRequest{}, func(r *http.Request, model interface{}, returnCode *int) interface{} {
+		uhttp.WithPostModel(setCustomTimeRequest{}, func(r *http.Request, model interface{}, returnCode *int) interface{} {
 			s.Success = true
 			s.Error = ""
-			req := model.(*setBreakCustomTimeRequest)
 
-			err := s.setBreakStart(req.StartTime)
+			req := model.(*setCustomTimeRequest)
+			s.StartTime = req.CustomStartTime
+			return s
+		}),
+	)
+}
+
+var SetCustomStopTime = func(s *ServerData) uhttp.Handler {
+	return uhttp.NewHandler(
+		uhttp.WithPostModel(setCustomTimeRequest{}, func(r *http.Request, model interface{}, returnCode *int) interface{} {
+			s.Success = true
+			s.Error = ""
+
+			req := model.(*setCustomTimeRequest)
+
+			if req.CustomStopTime.Before(s.StartTime) {
+				s.Success = false
+				s.Error = "Stop Time is before Start Time"
+				ulog.Errorf("Error setting Stop Time: %s", s.Error)
+				return s
+			}
+
+			s.CustomTimeLock = true
+			s.StopTime = req.CustomStopTime
+			return s
+		}),
+	)
+}
+
+var SetCustomBreakStartTime = func(s *ServerData) uhttp.Handler {
+	return uhttp.NewHandler(
+		uhttp.WithPostModel(setCustomTimeRequest{}, func(r *http.Request, model interface{}, returnCode *int) interface{} {
+			s.Success = true
+			s.Error = ""
+
+			req := model.(*setCustomTimeRequest)
+
+			err := s.setBreakStart(req.CustomBreakStartTime)
 			if err != nil {
 				s.Success = false
 				s.Error = err.Error()
@@ -73,13 +109,24 @@ var SetBreakCustomTimeHandler = func(s *ServerData) uhttp.Handler {
 				return s
 			}
 
-			err = s.setBreakEnd(req.EndTime)
+			return s
+		}),
+	)
+}
+
+var SetCustomBreakStopTime = func(s *ServerData) uhttp.Handler {
+	return uhttp.NewHandler(
+		uhttp.WithPostModel(setCustomTimeRequest{}, func(r *http.Request, model interface{}, returnCode *int) interface{} {
+			s.Success = true
+			s.Error = ""
+
+			req := model.(*setCustomTimeRequest)
+
+			err := s.setBreakEnd(req.CustomBreakStopTime)
 			if err != nil {
 				s.Success = false
 				s.Error = err.Error()
-				// resetting BreakStart when BreakEnd cannot be set
-				s.BreakStart = time.Time{}
-				ulog.Errorf("Error setting BreakEnd: %s", s.Error)
+				ulog.Errorf("Resetting BreakStart, Error setting BreakEnd: %s", s.Error)
 				return s
 			}
 
@@ -106,7 +153,8 @@ var SendToPersonioHandler = func(s *ServerData, cfg config.EnvConfig) uhttp.Hand
 			s.BreakEnd = time.Time{}
 			s.BreakStart = time.Time{}
 			s.StartTime = time.Now()
-			s.CurrentTime = time.Now()
+			s.StopTime = time.Now()
+			s.CustomTimeLock = false
 
 			return s
 		}),

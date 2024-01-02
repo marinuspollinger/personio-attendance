@@ -36,28 +36,15 @@ local personio-server must be running for these commands to work
 
 ---
 
+## Command Line Flags
+
 `personio-cli` supports the following command-line options:
 
-- `--help`  
-  Show this help.
-
-- `--status`  
-  Get Current Times.
-
-- `--break-end-time <time>`  
-  Set Break End Time (format: 2006-01-02 15:04).
-
-- `--break-start-time <time>`  
-  Set Break Start Time (format: 2006-01-02 15:04).
-
-- `--start-break`  
-  Start the Break now!
-
-- `--end-break`  
-  End the Break now!
-
-- `--send`  
-  Send Current Times to Personio API.
-
-- `--yes`  
-  Immediately write to personio, without checking times first.
+- `--end-break`: End the Break now!
+- `--start-break`: Start the Break now!
+- `--start-time string`: Set Start Time.
+- `--stop-time string`: Set Stop Time.
+- `--break-start-time string`: Set Break Start Time.
+- `--break-stop-time string`: Set Break Stop Time.
+- `--send`: Send Current Times to Personio API.
+- `--yes`: Immediately write to Personio, without checking times first.

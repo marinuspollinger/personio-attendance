@@ -3,9 +3,9 @@ package config
 import "time"
 
 type EnvConfig struct {
-	LogLevel                string        `env:"LOG_LEVEL" default:"info"`
-	HttpAddress             string        `env:"HTTP_ADDRESS" default:"0.0.0.0:33333"`
-	CurrentTimeLoopInterval time.Duration `env:"CURRENT_TIME_LOOP_INTERVAL" default:"20s"`
+	LogLevel             string        `env:"LOG_LEVEL" default:"info"`
+	HttpAddress          string        `env:"HTTP_ADDRESS" default:"0.0.0.0:33333"`
+	StopTimeLoopInterval time.Duration `env:"CURRENT_TIME_LOOP_INTERVAL" default:"20s"`
 
 	PersonioEmployeeId   int    `env:"PERSONIO_EMPLOYEE_ID" required:"true"`
 	PersonioHost         string `env:"PERSONIO_HOST" required:"true"`

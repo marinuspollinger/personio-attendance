@@ -13,12 +13,13 @@ import (
 )
 
 type ServerData struct {
-	StartTime   time.Time `json:"start_time"`
-	CurrentTime time.Time `json:"current_time"`
-	BreakStart  time.Time `json:"break_start"`
-	BreakEnd    time.Time `json:"break_end"`
-	Success     bool      `json:"success"`
-	Error       string    `json:"error_message"`
+	StartTime      time.Time `json:"start_time"`
+	StopTime       time.Time `json:"current_time"`
+	BreakStart     time.Time `json:"break_start"`
+	BreakEnd       time.Time `json:"break_end"`
+	Success        bool      `json:"success"`
+	Error          string    `json:"error_message"`
+	CustomTimeLock bool      `json:"custom_time_lock"`
 }
 
 type PersonioRequest struct {
@@ -54,13 +55,16 @@ func NewPersonioServer() *ServerData {
 func (s *ServerData) Run(cfg config.EnvConfig) error {
 	if s.StartTime.IsZero() {
 		s.StartTime = time.Now()
+		s.Success = true
 		ulog.Infof("Set StartTime: %s", s.StartTime.Format(time.RFC822))
 	}
 
 	for {
-		s.CurrentTime = time.Now()
-		ulog.Tracef("Set CurrentTime: %s", s.CurrentTime.Format(time.RFC822))
-		time.Sleep(cfg.CurrentTimeLoopInterval)
+		if !s.CustomTimeLock {
+			s.StopTime = time.Now()
+			ulog.Tracef("Set StopTime: %s", s.StopTime.Format(time.RFC822))
+			time.Sleep(cfg.StopTimeLoopInterval)
+		}
 
 	}
 }
@@ -107,24 +111,34 @@ func (s *ServerData) sendToPersonio(cfg config.EnvConfig) error {
 	dateFormat := "2006-01-02"
 	timeFormat := "15:04"
 
-	// check if Start Time is correct
+	// check if Start and Stop Time is correct
 	if s.StartTime.IsZero() {
 		return fmt.Errorf("No StartTime set")
 	}
-	if s.CurrentTime.IsZero() {
-		return fmt.Errorf("No CurrentTime set")
+	if s.StopTime.IsZero() {
+		return fmt.Errorf("No StopTime set")
 	}
-	if s.StartTime.Format(dateFormat) != s.CurrentTime.Format(dateFormat) {
-		return fmt.Errorf("StartTime and CurrentTime not on same day. This is not Supported.")
+	if s.StartTime.Format(dateFormat) != s.StopTime.Format(dateFormat) {
+		return fmt.Errorf("StartTime and StopTime not on same day.")
 	}
-
-	// check if Break Times are OK
-	if s.BreakEnd.After(s.CurrentTime) {
-		return fmt.Errorf("BreakEnd is after of end-time")
+	if s.StartTime.After(s.StopTime) {
+		return fmt.Errorf("StartTime after StopTime")
 	}
 
+	// check if break times are OK and get diff
 	diff := time.Duration(0)
 	if !s.BreakStart.IsZero() && !s.BreakEnd.IsZero() {
+
+		if s.BreakEnd.After(s.StopTime) {
+			return fmt.Errorf("BreakEnd is after of end-time")
+		}
+		if s.StartTime.Format(dateFormat) != s.BreakStart.Format(dateFormat) {
+			return fmt.Errorf("StartTime and BreakStart not on same day")
+		}
+		if s.StartTime.Format(dateFormat) != s.BreakEnd.Format(dateFormat) {
+			return fmt.Errorf("StartTime and BreakEnd not on same day")
+		}
+
 		diff = s.BreakEnd.Sub(s.BreakStart)
 	}
 
@@ -140,7 +154,7 @@ func (s *ServerData) sendToPersonio(cfg config.EnvConfig) error {
 				Employee:  cfg.PersonioEmployeeId,
 				Date:      s.StartTime.Format(dateFormat),
 				StartTime: s.StartTime.Format(timeFormat),
-				EndTime:   s.CurrentTime.Format(timeFormat),
+				EndTime:   s.StopTime.Format(timeFormat),
 				Break:     int(diff.Minutes()),
 			},
 		},

@@ -39,7 +39,11 @@ func main() {
 
 	u.Handle("/api/startBreakNow", pserver.StartBreakNowHandler(ps))
 	u.Handle("/api/endBreakNow", pserver.EndBreakNowHandler(ps))
-	u.Handle("/api/setBreakCustomTime", pserver.SetBreakCustomTimeHandler(ps))
+
+	u.Handle("/api/setCustomBreakStartTime", pserver.SetCustomBreakStartTime(ps))
+	u.Handle("/api/setCustomBreakStopTime", pserver.SetCustomBreakStopTime(ps))
+	u.Handle("/api/setCustomStartTime", pserver.SetCustomStartTime(ps))
+	u.Handle("/api/setCustomStopTime", pserver.SetCustomStopTime(ps))
 
 	ulog.FatalIfError(u.ListenAndServe())
 }

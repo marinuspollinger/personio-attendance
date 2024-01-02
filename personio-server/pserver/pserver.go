@@ -66,12 +66,20 @@ func (s *ServerData) Run(cfg config.EnvConfig) error {
 }
 
 func (s *ServerData) setBreakStart(breakTime time.Time) error {
-	if s.BreakStart.IsZero() {
-		s.BreakStart = breakTime
-		ulog.Infof("Successfully set BreakStart: %s", s.BreakStart)
-		return nil
+
+	// check if breakStart is alredy set (only one break is supported atm)
+	if !s.BreakStart.IsZero() {
+		return fmt.Errorf("BreakStart is already set: %s", s.BreakStart.Format(time.RFC822))
 	}
-	return fmt.Errorf("BreakStart is already set: %s", s.BreakStart.Format(time.RFC822))
+
+	// check if breakStart > start-time
+	if breakTime.Before(s.StartTime) {
+		return fmt.Errorf(("BreakStart is before StartTime, this is not possible"))
+	}
+
+	s.BreakStart = breakTime
+	ulog.Infof("Successfully set BreakStart: %s", s.BreakStart)
+	return nil
 }
 
 func (s *ServerData) setBreakEnd(breakTime time.Time) error {
@@ -81,9 +89,8 @@ func (s *ServerData) setBreakEnd(breakTime time.Time) error {
 	}
 
 	// Check if now is after BreakStart
-	// This is a bit missleading, but the "newer" time is BEFORE the "older" time according to time.After
-	if s.BreakEnd.After(s.BreakStart) {
-		return fmt.Errorf("BreakEnd (%s) is BEFORE BreakStart (%s)", breakTime, s.BreakStart)
+	if breakTime.Before(s.BreakStart) {
+		return fmt.Errorf("BreakEnd (%s) is before BreakStart (%s)", breakTime, s.BreakStart)
 	}
 
 	if s.BreakEnd.IsZero() {
@@ -100,15 +107,20 @@ func (s *ServerData) sendToPersonio(cfg config.EnvConfig) error {
 	dateFormat := "2006-01-02"
 	timeFormat := "15:04"
 
+	// check if Start Time is correct
 	if s.StartTime.IsZero() {
 		return fmt.Errorf("No StartTime set")
 	}
 	if s.CurrentTime.IsZero() {
 		return fmt.Errorf("No CurrentTime set")
 	}
-
 	if s.StartTime.Format(dateFormat) != s.CurrentTime.Format(dateFormat) {
 		return fmt.Errorf("StartTime and CurrentTime not on same day. This is not Supported.")
+	}
+
+	// check if Break Times are OK
+	if s.BreakEnd.After(s.CurrentTime) {
+		return fmt.Errorf("BreakEnd is after of end-time")
 	}
 
 	diff := time.Duration(0)

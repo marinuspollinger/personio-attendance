@@ -77,6 +77,8 @@ var SetBreakCustomTimeHandler = func(s *ServerData) uhttp.Handler {
 			if err != nil {
 				s.Success = false
 				s.Error = err.Error()
+				// resetting BreakStart when BreakEnd cannot be set
+				s.BreakStart = time.Time{}
 				ulog.Errorf("Error setting BreakEnd: %s", s.Error)
 				return s
 			}

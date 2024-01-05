@@ -37,13 +37,10 @@ func main() {
 	u.Handle("/api/getServerData", pserver.GetStatusHandler(ps))
 	u.Handle("/api/sendToPersonio", pserver.SendToPersonioHandler(ps, cfg))
 
-	u.Handle("/api/startBreakNow", pserver.StartBreakNowHandler(ps))
-	u.Handle("/api/endBreakNow", pserver.EndBreakNowHandler(ps))
-
-	u.Handle("/api/setCustomBreakStartTime", pserver.SetCustomBreakStartTime(ps))
-	u.Handle("/api/setCustomBreakStopTime", pserver.SetCustomBreakStopTime(ps))
-	u.Handle("/api/setCustomStartTime", pserver.SetCustomStartTime(ps))
-	u.Handle("/api/setCustomStopTime", pserver.SetCustomStopTime(ps))
+	u.Handle("/api/setBreakStartTime", pserver.SetBreakStartTimeHandler(ps))
+	u.Handle("/api/setBreakStopTime", pserver.SetBreakStopTimeHandler(ps))
+	u.Handle("/api/setStartTime", pserver.SetStartTimeHandler(ps))
+	u.Handle("/api/setStopTime", pserver.SetStopTimeHandler(ps))
 
 	ulog.FatalIfError(u.ListenAndServe())
 }

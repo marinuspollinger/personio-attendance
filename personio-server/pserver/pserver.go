@@ -69,16 +69,23 @@ func (s *ServerData) Run(cfg config.EnvConfig) error {
 	}
 }
 
-func (s *ServerData) setBreakStart(breakTime time.Time) error {
+func (s *ServerData) setBreakStart(breakTime time.Time, override bool) error {
 
 	// check if breakStart is alredy set (only one break is supported atm)
-	if !s.BreakStart.IsZero() {
-		return fmt.Errorf("BreakStart is already set: %s", s.BreakStart.Format(time.RFC822))
+	if !s.BreakStart.IsZero() && !override {
+		return fmt.Errorf("BreakStart is already set: %s. To overwrite use '--yes'", s.BreakStart.Format(time.RFC822))
 	}
 
 	// check if breakStart > start-time
 	if breakTime.Before(s.StartTime) {
-		return fmt.Errorf(("BreakStart is before StartTime, this is not possible"))
+		return fmt.Errorf("BreakStart is before StartTime, this is not possible")
+	}
+
+	if override {
+		oldBreakStart := s.BreakStart
+		s.BreakStart = breakTime
+		ulog.Infof("Overwritten BreakStart %s with %s", oldBreakStart, s.BreakStart)
+		return nil
 	}
 
 	s.BreakStart = breakTime
@@ -86,7 +93,7 @@ func (s *ServerData) setBreakStart(breakTime time.Time) error {
 	return nil
 }
 
-func (s *ServerData) setBreakEnd(breakTime time.Time) error {
+func (s *ServerData) setBreakEnd(breakTime time.Time, override bool) error {
 	// Check if BreakStart is set
 	if s.BreakStart.IsZero() {
 		return fmt.Errorf("BreakStart is not set. Cannot set BreakEnd if BreakStart is not set yet")
@@ -103,7 +110,14 @@ func (s *ServerData) setBreakEnd(breakTime time.Time) error {
 		return nil
 	}
 
-	return fmt.Errorf("BreakEnd is already set: %s", s.BreakEnd.Format(time.RFC822))
+	if override {
+		oldBreakEnd := s.BreakEnd
+		s.BreakEnd = breakTime
+		ulog.Infof("Overwritten Break End %s with %s", oldBreakEnd, s.BreakEnd)
+		return nil
+	}
+
+	return fmt.Errorf("BreakEnd is already set: %s. To overwrite use '--yes'", s.BreakEnd.Format(time.RFC822))
 }
 
 func (s *ServerData) sendToPersonio(cfg config.EnvConfig) error {

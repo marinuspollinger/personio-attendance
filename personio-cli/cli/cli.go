@@ -22,13 +22,12 @@ type personioServerResponse struct {
 }
 
 type setCustomTimeRequest struct {
-	CustomBreakStartTime time.Time `json:"break_start_time"`
-	CustomBreakStopTime  time.Time `json:"break_end_time"`
-	CustomStartTime      time.Time `json:"start_time"`
-	CustomStopTime       time.Time `json:"end_time"`
+	BreakStartTime time.Time `json:"break_start_time"`
+	BreakStopTime  time.Time `json:"break_end_time"`
+	StartTime      time.Time `json:"start_time"`
+	StopTime       time.Time `json:"end_time"`
+	Override       bool      `json:"override"`
 }
-
-var parseTimeStampString string = "2006-01-02 15:04"
 
 func GetStatus(cfg config.EnvConfig) (int, error) {
 	err := getRequest("/api/getServerData", cfg)
@@ -38,33 +37,18 @@ func GetStatus(cfg config.EnvConfig) (int, error) {
 	return 0, nil
 }
 
-func EndBreak(cfg config.EnvConfig) (int, error) {
-	err := getRequest("/api/endBreakNow", cfg)
-	if err != nil {
-		return 1, err
-	}
-	return 0, nil
-}
-
-func StartBreak(cfg config.EnvConfig) (int, error) {
-	err := getRequest("/api/startBreakNow", cfg)
-	if err != nil {
-		return 1, err
-	}
-	return 0, nil
-}
-
-func CustomBreakStartTime(cfg config.EnvConfig, start string) (int, error) {
+func SetBreakStartTime(cfg config.EnvConfig, start string, override bool) (int, error) {
 	startParsed, err := parseTimeStamp(start)
 	if err != nil {
 		return 1, err
 	}
 
 	body := setCustomTimeRequest{
-		CustomBreakStartTime: startParsed,
+		BreakStartTime: startParsed,
+		Override:       override,
 	}
 
-	err = postRequest("/api/setCustomBreakStartTime", body, cfg)
+	err = postRequest("/api/setBreakStartTime", body, cfg)
 	if err != nil {
 		return 1, err
 	}
@@ -72,17 +56,18 @@ func CustomBreakStartTime(cfg config.EnvConfig, start string) (int, error) {
 	return 0, nil
 }
 
-func CustomBreakStopTime(cfg config.EnvConfig, stop string) (int, error) {
+func SetBreakStopTime(cfg config.EnvConfig, stop string, override bool) (int, error) {
 	stopParsed, err := parseTimeStamp(stop)
 	if err != nil {
 		return 1, err
 	}
 
 	body := setCustomTimeRequest{
-		CustomBreakStopTime: stopParsed,
+		BreakStopTime: stopParsed,
+		Override:      override,
 	}
 
-	err = postRequest("/api/setCustomBreakStopTime", body, cfg)
+	err = postRequest("/api/setBreakStopTime", body, cfg)
 	if err != nil {
 		return 1, err
 	}
@@ -90,17 +75,17 @@ func CustomBreakStopTime(cfg config.EnvConfig, stop string) (int, error) {
 	return 0, nil
 }
 
-func CustomStartTime(cfg config.EnvConfig, start string) (int, error) {
+func SetStartTime(cfg config.EnvConfig, start string) (int, error) {
 	startParsed, err := parseTimeStamp(start)
 	if err != nil {
 		return 1, err
 	}
 
 	body := setCustomTimeRequest{
-		CustomStartTime: startParsed,
+		StartTime: startParsed,
 	}
 
-	err = postRequest("/api/setCustomStartTime", body, cfg)
+	err = postRequest("/api/setStartTime", body, cfg)
 	if err != nil {
 		return 1, err
 	}
@@ -108,17 +93,17 @@ func CustomStartTime(cfg config.EnvConfig, start string) (int, error) {
 	return 0, nil
 }
 
-func CustomStopTime(cfg config.EnvConfig, stop string) (int, error) {
+func SetStopTime(cfg config.EnvConfig, stop string) (int, error) {
 	stopParsed, err := parseTimeStamp(stop)
 	if err != nil {
 		return 1, err
 	}
 
 	body := setCustomTimeRequest{
-		CustomStopTime: stopParsed,
+		StopTime: stopParsed,
 	}
 
-	err = postRequest("/api/setCustomStopTime", body, cfg)
+	err = postRequest("/api/setStopTime", body, cfg)
 	if err != nil {
 		return 1, err
 	}
@@ -216,10 +201,10 @@ func postRequest(endpoint string, body setCustomTimeRequest, cfg config.EnvConfi
 
 func printToShell(data personioServerResponse) {
 	fmt.Printf("Personio CLI Tool by Marinus\n")
-	fmt.Printf("Start-Time (logon time): \t\t\t\t%s\n", data.StartTime.Format(parseTimeStampString))
-	fmt.Printf("Current-Time (End time when sending to personio): \t%s\n", data.CurrentTime.Format(parseTimeStampString))
-	fmt.Printf("Break-Start-Time: \t\t\t\t\t%s\n", data.BreakStart.Format(parseTimeStampString))
-	fmt.Printf("Break-End-Time: \t\t\t\t\t%s\n", data.BreakEnd.Format(parseTimeStampString))
+	fmt.Printf("Start-Time (logon time): \t\t\t\t%s\n", data.StartTime.Format(config.ParseTimeStampString))
+	fmt.Printf("Current-Time (End time when sending to personio): \t%s\n", data.CurrentTime.Format(config.ParseTimeStampString))
+	fmt.Printf("Break-Start-Time: \t\t\t\t\t%s\n", data.BreakStart.Format(config.ParseTimeStampString))
+	fmt.Printf("Break-End-Time: \t\t\t\t\t%s\n", data.BreakEnd.Format(config.ParseTimeStampString))
 	fmt.Printf("Last Server Response Success: \t\t\t\t%v\n", data.Success)
 	fmt.Printf("Last Server Response Error: \t\t\t\t%s\n", data.Error)
 }
@@ -230,7 +215,7 @@ func parseTimeStamp(ts string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	parsedTs, err := time.ParseInLocation(parseTimeStampString, ts, loc)
+	parsedTs, err := time.ParseInLocation(config.ParseTimeStampString, ts, loc)
 	if err != nil {
 		return time.Time{}, err
 	}

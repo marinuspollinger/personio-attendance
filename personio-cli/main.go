@@ -6,6 +6,7 @@ import (
 	"os"
 	"personio-cli/cli"
 	config "personio-cli/config"
+	"time"
 
 	"github.com/codingconcepts/env"
 	ulog "github.com/dunv/ulog/v2"
@@ -47,7 +48,7 @@ func main() {
 	}
 
 	if *startBreakNow {
-		exitCode, err := cli.StartBreak(cfg)
+		exitCode, err := cli.SetBreakStartTime(cfg, time.Now().Format(config.ParseTimeStampString), *yFlag)
 		if err != nil {
 			fmt.Printf("Error starting Break: %s", err)
 		}
@@ -56,7 +57,7 @@ func main() {
 	}
 
 	if *endBreakNow {
-		exitCode, err := cli.EndBreak(cfg)
+		exitCode, err := cli.SetBreakStopTime(cfg, time.Now().Format(config.ParseTimeStampString), *yFlag)
 		if err != nil {
 			fmt.Printf("Error ending Break: %s", err)
 		}
@@ -65,7 +66,7 @@ func main() {
 	}
 
 	if *customStartTime != "" {
-		exitCode, err := cli.CustomStartTime(cfg, *customStartTime)
+		exitCode, err := cli.SetStartTime(cfg, *customStartTime)
 		if err != nil {
 			fmt.Printf("Error setting Custom Start Time: %s", err)
 		}
@@ -75,7 +76,7 @@ func main() {
 	}
 
 	if *customBreakStart != "" {
-		exitCode, err := cli.CustomBreakStartTime(cfg, *customBreakStart)
+		exitCode, err := cli.SetBreakStartTime(cfg, *customBreakStart, *yFlag)
 		if err != nil {
 			fmt.Printf("Error setting Custom Break Start Time: %s", err)
 		}
@@ -85,7 +86,7 @@ func main() {
 	}
 
 	if *customBreakStop != "" {
-		exitCode, err := cli.CustomBreakStopTime(cfg, *customBreakStop)
+		exitCode, err := cli.SetBreakStopTime(cfg, *customBreakStop, *yFlag)
 		if err != nil {
 			fmt.Printf("Error setting Custom Break Stop Time: %s", err)
 		}
@@ -95,7 +96,7 @@ func main() {
 	}
 
 	if *customStopTime != "" {
-		exitCode, err := cli.CustomStopTime(cfg, *customStopTime)
+		exitCode, err := cli.SetStopTime(cfg, *customStopTime)
 		if err != nil {
 			fmt.Printf("Error setting Custom Stop Time: %s", err)
 		}
@@ -120,7 +121,7 @@ func main() {
 func exit(cfg config.EnvConfig, exitCode int) {
 	_, err := cli.GetStatus(cfg)
 	if err != nil {
-		fmt.Printf("Error getting status: %s", err)
+		fmt.Printf("\nError getting status: %s", err)
 		os.Exit(127)
 	}
 

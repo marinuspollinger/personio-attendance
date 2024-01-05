@@ -3,7 +3,7 @@ complete -c personio-cli -l start-break -d 'Start the Break now!'
 complete -c personio-cli -l stop-break -d 'End the Break now!'
 complete -c personio-cli -l start-time -d 'Set Start Time (2006-01-02 15:04)' -r
 complete -c personio-cli -l stop-time -d 'Set Stop Time (2006-01-02 15:04)' -r
-complete -c personio-cli -l break-end-time -d 'Set Break End Time (2006-01-02 15:04)' -r
+complete -c personio-cli -l break-start-time -d 'Set Break Start Time (2006-01-02 15:04)' -r
 complete -c personio-cli -l break-stop-time -d 'Set Break Stop Time (2006-01-02 15:04)' -r
 complete -c personio-cli -l send -d 'Send Current Times to Personio API'
 complete -c personio-cli -l yes -d 'Immediatly write to personio, without checking times first'
